@@ -5,18 +5,28 @@ on: [workflow_dispatch]
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      VNC_PASS: ${{ secrets.VNC_PASSWORD }}
     steps:
       - name: Install Desktop Environment & VNC
         run: |
           sudo apt update
           sudo apt install xfce4 xfce4-goodies tightvncserver git -y
-          vncserver :1
-          vncserver -kill :1
+
           mkdir -p ~/.vnc
-          echo "#!/bin/bash
-          xrdb $HOME/.Xresources
-          startxfce4 &" > ~/.vnc/xstartup
+          # إنشاء ملف الباسورد بدون إدخال يدوي
+          echo "$VNC_PASS" | vncpasswd -f > ~/.vnc/passwd
+          chmod 600 ~/.vnc/passwd
+
+          # ملف بدء واجهة XFCE
+          cat > ~/.vnc/xstartup <<'EOF'
+#!/bin/bash
+xrdb $HOME/.Xresources
+startxfce4 &
+EOF
           chmod +x ~/.vnc/xstartup
+
+          # تشغيل السيرفر
           vncserver :1 -geometry 1280x720 -depth 24
 
       - name: Setup noVNC Server
